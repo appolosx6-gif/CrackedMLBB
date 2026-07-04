@@ -1,24 +1,29 @@
 import fs from 'fs';
 import path from 'path';
 
-// PAKAI /tmp (BISA WRITE)
+// PAKAI /tmp
 const DATA_DIR = '/tmp';
 const REGISTER_PATH = path.join(DATA_DIR, 'register.txt');
 const DEVICES_PATH = path.join(DATA_DIR, 'devices.json');
 
-// Fungsi untuk membaca daftar user_key
+// Fungsi untuk membaca daftar user_key dengan error handling
 function getRegisteredKeys() {
   try {
+    // Cek apakah file ada
     if (!fs.existsSync(REGISTER_PATH)) {
+      console.log('register.txt not found, creating new file...');
       fs.writeFileSync(REGISTER_PATH, '');
       return [];
     }
     const fileContent = fs.readFileSync(REGISTER_PATH, 'utf8');
-    return fileContent.split('\n')
+    const keys = fileContent.split('\n')
       .map(line => line.trim())
       .filter(line => line.length > 0);
+    console.log('Keys loaded:', keys);
+    return keys;
   } catch (error) {
     console.error('Error reading register.txt:', error);
+    // Return array kosong biar tidak error
     return [];
   }
 }
@@ -57,14 +62,17 @@ function isExpired(expiredDate) {
 }
 
 export default function handler(req, res) {
+  // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
+  // Handle preflight request
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
+  // Only allow GET and POST methods
   if (req.method !== 'GET' && req.method !== 'POST') {
     return res.status(405).json({ 
       status: false, 
@@ -72,8 +80,10 @@ export default function handler(req, res) {
     });
   }
 
+  // Get query parameters
   const { game, version, user_key, serial, resource } = req.query;
 
+  // Validasi required parameters
   if (!game || !version || !user_key || !serial || !resource) {
     return res.status(400).json({
       status: false,
@@ -81,6 +91,7 @@ export default function handler(req, res) {
     });
   }
 
+  // Validasi game harus MLBB
   if (game !== 'MLBB') {
     return res.status(400).json({
       status: false,
@@ -88,25 +99,34 @@ export default function handler(req, res) {
     });
   }
 
+  // Baca daftar user_key dari register.txt
   const registeredKeys = getRegisteredKeys();
   
+  // Check if user_key is registered
   if (!registeredKeys.includes(user_key)) {
+    console.log(`Key not registered: ${user_key}`);
     return res.status(200).json({
       status: false,
       reason: "MEMBER KEY NOT REGISTERED"
     });
   }
 
-  let devicesData = getDevicesData();
+  // Baca data devices
+  const devicesData = getDevicesData();
 
+  // Cek apakah user_key sudah memiliki device
   if (devicesData[user_key]) {
     const existingDevice = devicesData[user_key];
     
+    // Cek expired
     if (isExpired(existingDevice.expired)) {
+      console.log(`[LOG] Device expired for ${user_key}, allowing new device...`);
       delete devicesData[user_key];
       saveDevicesData(devicesData);
     } else {
+      // Cek apakah serial cocok
       if (existingDevice.serial !== serial) {
+        console.log(`[LOG] Device limit reached for ${user_key}. Serial: ${serial} not match with ${existingDevice.serial}`);
         return res.status(200).json({
           status: false,
           reason: "DEVICE LIMIT IS OUT"
@@ -115,7 +135,7 @@ export default function handler(req, res) {
     }
   }
 
-  // Generate token
+  // Generate token based on resource + serial + timestamp
   const generateToken = (resource, serial) => {
     const baseString = `${resource}|${serial}|${Date.now()}`;
     
@@ -132,9 +152,13 @@ export default function handler(req, res) {
     return `${hexHash}${randomPart}`.substring(0, 32);
   };
 
+  // Generate token
   const token = generateToken(resource, serial);
+  
+  // Generate random number untuk rng
   const rng = Math.floor(Math.random() * 2000000000) + 1000000000;
 
+  // Current date
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-GB', {
     day: '2-digit',
@@ -147,16 +171,20 @@ export default function handler(req, res) {
     minute: '2-digit'
   });
 
+  // Expired time (1 hour from now)
   const expired = new Date(now.getTime() + 3600000);
   const expiredStr = expired.toISOString().replace('T', ' ').slice(0, 19);
 
+  // Simpan atau update device
   devicesData[user_key] = {
     serial: serial,
     datte: `${dateStr} ${timeStr}`,
     expired: expiredStr
   };
   saveDevicesData(devicesData);
+  console.log(`[LOG] Device saved/updated for ${user_key}. Serial: ${serial}`);
 
+  // Response sukses
   const response = {
     status: true,
     data: {
@@ -177,5 +205,6 @@ export default function handler(req, res) {
     }
   };
 
+  console.log(`[LOG] Response sent for ${user_key}`);
   return res.status(200).json(response);
 }
