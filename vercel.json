@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "functions": {
+    "api/MLBB.js": {
+      "memory": 1024,
+      "maxDuration": 10
+    },
+    "api/admin/*.js": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
+  },
+  "routes": [
+    {
+      "src": "/MLBB",
+      "dest": "/api/MLBB.js"
+    },
+    {
+      "src": "/api/admin/(.*)",
+      "dest": "/api/admin/$1.js"
+    },
+    {
+      "src": "/admin",
+      "dest": "/admin.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
+}

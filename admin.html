@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - MLBB API</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+        }
+
+        .nav-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .nav-bar h1 {
+            color: #333;
+            font-size: 24px;
+        }
+
+        .nav-links a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .nav-links a:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .nav-links a.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .login-form { display: none; }
+        .login-form.active { display: block; }
+        .dashboard { display: none; }
+        .dashboard.active { display: block; }
+
+        .form-group { margin-bottom: 20px; }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        input[type="number"],
+        input[type="datetime-local"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s;
+            outline: none;
+            font-family: 'Courier New', monospace;
+        }
+
+        input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3); }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        .btn-success:hover { background: #059669; transform: translateY(-2px); }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        .btn-danger:hover { background: #dc2626; transform: translateY(-2px); }
+
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+        .btn-warning:hover { background: #d97706; transform: translateY(-2px); }
+
+        .btn-logout {
+            background: #6b7280;
+            color: white;
+            float: right;
+        }
+        .btn-logout:hover { background: #4b5563; }
+
+        .btn-block { width: 100%; }
+
+        .card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .key-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .key-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .key-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .key-text {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .stat-box {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid #e5e7eb;
+        }
+
+        .stat-number {
+            font-size: 28px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 5px;
+        }
+
+        .alert {
+            padding: 12px 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+            display: block;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+            display: block;
+        }
+
+        .flex {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .text-muted { color: #6b7280; font-size: 13px; }
+        .mt-10 { margin-top: 10px; }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-success { background: #d1fae5; color: #065f46; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+
+        .expired-form {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .expired-form input {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 20px; }
+            .stat-box { grid-template-columns: 1fr 1fr; }
+            .flex-between { flex-direction: column; align-items: stretch; }
+            .key-item { flex-direction: column; align-items: stretch; gap: 10px; }
+            .nav-bar { flex-direction: column; gap: 10px; }
+            .expired-form { flex-direction: column; }
+            .expired-form input { min-width: unset; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Navbar -->
+        <div class="nav-bar">
+            <h1>🔐 Admin Panel</h1>
+            <div class="nav-links">
+                <a href="/">🏠 Test API</a>
+                <a href="/admin" class="active">🔐 Admin Panel</a>
+            </div>
+        </div>
+
+        <!-- Login Form -->
+        <div id="loginForm" class="login-form active">
+            <h2 style="margin-bottom: 10px;">Login Admin</h2>
+            <p class="text-muted" style="margin-bottom: 20px;">Masuk untuk mengelola user keys</p>
+            <div id="loginAlert" class="alert"></div>
+            <form id="loginFormElement">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="username" placeholder="Masukkan username" value="owner">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="password" placeholder="Masukkan password" value="pinoganteng123">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Login</button>
+            </form>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="dashboard" class="dashboard">
+            <div class="flex-between">
+                <h2 style="margin-bottom: 10px;">📊 Dashboard</h2>
+                <button class="btn btn-logout" onclick="logout()">🚪 Logout</button>
+            </div>
+
+            <div id="dashboardAlert" class="alert"></div>
+
+            <!-- Stats -->
+            <div class="stat-box">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalKeys">0</div>
+                    <div class="stat-label">Total Keys</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="activeDevices">0</div>
+                    <div class="stat-label">Active Devices</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="totalDevices">0</div>
+                    <div class="stat-label">Total Devices</div>
+                </div>
+            </div>
+
+            <!-- Generate Key -->
+            <div class="card">
+                <div class="card-title">🔑 Generate New Key</div>
+                <div class="flex">
+                    <input type="number" id="keyCount" value="1" min="1" max="10" style="width: 100px; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 10px;">
+                    <button class="btn btn-success" onclick="generateKeys()">Generate Key(s)</button>
+                    <button class="btn btn-primary" onclick="refreshKeys()">🔄 Refresh</button>
+                </div>
+                <p class="text-muted mt-10">Key akan otomatis diawali dengan <strong>PINOKCRACK_</strong></p>
+            </div>
+
+            <!-- Set Expired -->
+            <div class="card">
+                <div class="card-title">⏰ Set Expired Date</div>
+                <div class="expired-form">
+                    <input type="text" id="expiredKey" placeholder="PINOKCRACK_XXXX (key yang mau di-set expired)">
+                    <input type="datetime-local" id="expiredDate">
+                    <button class="btn btn-warning" onclick="setExpired()">Set Expired</button>
+                </div>
+                <p class="text-muted mt-10">Format expired: <strong>YYYY-MM-DD HH:MM:SS</strong> (contoh: 2026-12-31 23:59:59)</p>
+            </div>
+
+            <!-- Key List -->
+            <div class="card">
+                <div class="card-title">📋 Daftar User Keys</div>
+                <div id="keyList" class="key-list">
+                    <p class="text-muted text-center">Loading keys...</p>
+                </div>
+            </div>
+
+            <!-- Devices -->
+            <div class="card">
+                <div class="card-title">📱 Data Devices</div>
+                <div id="deviceList" class="key-list">
+                    <p class="text-muted text-center">Loading devices...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = window.location.origin;
+
+        // ========== LOGIN ==========
+        document.getElementById('loginFormElement').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const alert = document.getElementById('loginAlert');
+
+            try {
+                const response = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (data.status) {
+                    alert.className = 'alert alert-success';
+                    alert.textContent = '✅ Login berhasil!';
+                    alert.style.display = 'block';
+                    setTimeout(() => {
+                        document.getElementById('loginForm').classList.remove('active');
+                        document.getElementById('dashboard').classList.add('active');
+                        loadDashboard();
+                    }, 500);
+                } else {
+                    alert.className = 'alert alert-error';
+                    alert.textContent = '❌ ' + data.reason;
+                    alert.style.display = 'block';
+                }
+            } catch (error) {
+                alert.className = 'alert alert-error';
+                alert.textContent = '❌ Error: ' + error.message;
+                alert.style.display = 'block';
+            }
+        });
+
+        // ========== LOGOUT ==========
+        function logout() {
+            document.getElementById('dashboard').classList.remove('active');
+            document.getElementById('loginForm').classList.add('active');
+            document.getElementById('username').value = 'owner';
+            document.getElementById('password').value = 'pinoganteng123';
+            document.getElementById('loginAlert').style.display = 'none';
+        }
+
+        // ========== LOAD DASHBOARD ==========
+        async function loadDashboard() {
+            await refreshKeys();
+            await loadDevices();
+            await loadStats();
+        }
+
+        // ========== REFRESH KEYS ==========
+        async function refreshKeys() {
+            try {
+                const response = await fetch('/api/admin/keys');
+                const data = await response.json();
+                if (data.status) {
+                    displayKeys(data.data);
+                }
+            } catch (error) {
+                showAlert('Error loading keys: ' + error.message, 'error');
+            }
+        }
+
+        // ========== DISPLAY KEYS ==========
+        function displayKeys(keys) {
+            const container = document.getElementById('keyList');
+            if (!keys || keys.length === 0) {
+                container.innerHTML = '<p class="text-muted text-center">Belum ada user keys. Generate sekarang!</p>';
+                return;
+            }
+
+            let html = '';
+            keys.forEach(key => {
+                const isCracked = key.startsWith('PINOKCRACK_');
+                html += `
+                    <div class="key-item">
+                        <span class="key-text">
+                            ${isCracked ? '🔑 ' : ''}
+                            ${key}
+                            ${isCracked ? '<span class="badge badge-success">PINOKCRACK</span>' : ''}
+                        </span>
+                        <button class="btn btn-danger" onclick="deleteKey('${key}')" style="padding: 5px 15px; font-size: 12px;">🗑️ Hapus</button>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+            document.getElementById('totalKeys').textContent = keys.length;
+        }
+
+        // ========== LOAD DEVICES ==========
+        async function loadDevices() {
+            try {
+                const response = await fetch('/api/admin/devices');
+                const data = await response.json();
+                const container = document.getElementById('deviceList');
+
+                if (data.status && data.data && Object.keys(data.data).length > 0) {
+                    let html = '';
+                    const devices = data.data;
+                    Object.keys(devices).forEach(key => {
+                        const device = devices[key];
+                        const isExpired = device.expired && new Date(device.expired) < new Date();
+                        html += `
+                            <div class="key-item">
+                                <div>
+                                    <span class="key-text">${key}</span>
+                                    <span style="font-size: 12px; color: #6b7280; margin-left: 10px;">
+                                        Serial: ${device.serial || '-'} 
+                                        | Expired: ${device.expired || '-'}
+                                        ${isExpired ? ' <span class="badge badge-danger">Expired</span>' : ' <span class="badge badge-success">Active</span>'}
+                                    </span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    container.innerHTML = html;
+                    document.getElementById('totalDevices').textContent = Object.keys(devices).length;
+                } else {
+                    container.innerHTML = '<p class="text-muted text-center">Belum ada device terdaftar</p>';
+                    document.getElementById('totalDevices').textContent = '0';
+                }
+            } catch (error) {
+                console.error('Error loading devices:', error);
+                document.getElementById('deviceList').innerHTML = '<p class="text-muted text-center">Error loading devices</p>';
+            }
+        }
+
+        // ========== LOAD STATS ==========
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/admin/devices');
+                const data = await response.json();
+                if (data.status && data.data) {
+                    let active = 0;
+                    const now = new Date();
+                    Object.keys(data.data).forEach(key => {
+                        if (data.data[key].expired) {
+                            if (new Date(data.data[key].expired) > now) active++;
+                        } else {
+                            active++;
+                        }
+                    });
+                    document.getElementById('activeDevices').textContent = active;
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // ========== GENERATE KEYS ==========
+        async function generateKeys() {
+            const count = parseInt(document.getElementById('keyCount').value) || 1;
+            try {
+                const response = await fetch('/api/admin/keys', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ count })
+                });
+                const data = await response.json();
+
+                if (data.status) {
+                    showAlert(`✅ ${data.data.message}`, 'success');
+                    await refreshKeys();
+                    await loadStats();
+                } else {
+                    showAlert('❌ ' + data.reason, 'error');
+                }
+            } catch (error) {
+                showAlert('❌ Error: ' + error.message, 'error');
+            }
+        }
+
+        // ========== DELETE KEY ==========
+        async function deleteKey(key) {
+            if (!confirm(`Yakin ingin menghapus key: ${key}?`)) return;
+            try {
+                const response = await fetch('/api/admin/keys', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key })
+                });
+                const data = await response.json();
+
+                if (data.status) {
+                    showAlert(`✅ ${data.data.message}`, 'success');
+                    await refreshKeys();
+                    await loadStats();
+                } else {
+                    showAlert('❌ ' + data.reason, 'error');
+                }
+            } catch (error) {
+                showAlert('❌ Error: ' + error.message, 'error');
+            }
+        }
+
+        // ========== SET EXPIRED ==========
+        async function setExpired() {
+            const key = document.getElementById('expiredKey').value.trim();
+            const expired = document.getElementById('expiredDate').value;
+
+            if (!key || !expired) {
+                showAlert('❌ Masukkan key dan tanggal expired!', 'error');
+                return;
+            }
+
+            // Konversi ke format yang sesuai
+            const expiredFormatted = new Date(expired).toISOString().replace('T', ' ').slice(0, 19);
+
+            try {
+                const response = await fetch('/api/admin/keys', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key, expired: expiredFormatted })
+                });
+
+                const data = await response.json();
+
+                if (data.status) {
+                    showAlert(`✅ ${data.data.message}`, 'success');
+                    document.getElementById('expiredKey').value = '';
+                    document.getElementById('expiredDate').value = '';
+                    await loadDevices();
+                    await loadStats();
+                } else {
+                    showAlert('❌ ' + data.reason, 'error');
+                }
+            } catch (error) {
+                showAlert('❌ Error: ' + error.message, 'error');
+            }
+        }
+
+        // ========== SHOW ALERT ==========
+        function showAlert(message, type) {
+            const alert = document.getElementById('dashboardAlert');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            alert.style.display = 'block';
+            setTimeout(() => { alert.style.display = 'none'; }, 5000);
+        }
+
+        // Enter key to submit login
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && document.getElementById('loginForm').classList.contains('active')) {
+                document.getElementById('loginFormElement').dispatchEvent(new Event('submit'));
+            }
+        });
+    </script>
+</body>
+</html>
