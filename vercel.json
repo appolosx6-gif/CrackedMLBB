@@ -4,10 +4,6 @@
     "api/MLBB.js": {
       "memory": 1024,
       "maxDuration": 10
-    },
-    "api/admin/*.js": {
-      "memory": 1024,
-      "maxDuration": 10
     }
   },
   "routes": [
@@ -17,7 +13,7 @@
     },
     {
       "src": "/api/admin/(.*)",
-      "dest": "/api/admin/$1.js"
+      "dest": "/api/MLBB.js"
     },
     {
       "src": "/admin",

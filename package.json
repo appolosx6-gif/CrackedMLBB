@@ -1,7 +1,7 @@
 {
   "name": "vercel-api-mlbb",
   "version": "1.0.0",
-  "description": "MLBB API with Admin Panel",
+  "description": "MLBB API - All in One",
   "type": "module",
   "scripts": {
     "dev": "vercel dev",
