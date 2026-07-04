@@ -9,7 +9,6 @@ const DEVICES_PATH = path.join(DATA_DIR, 'devices.json');
 // Fungsi untuk membaca daftar user_key dengan error handling
 function getRegisteredKeys() {
   try {
-    // Cek apakah file ada
     if (!fs.existsSync(REGISTER_PATH)) {
       console.log('register.txt not found, creating new file...');
       fs.writeFileSync(REGISTER_PATH, '');
@@ -23,7 +22,6 @@ function getRegisteredKeys() {
     return keys;
   } catch (error) {
     console.error('Error reading register.txt:', error);
-    // Return array kosong biar tidak error
     return [];
   }
 }
@@ -80,8 +78,36 @@ export default function handler(req, res) {
     });
   }
 
-  // Get query parameters
-  const { game, version, user_key, serial, resource } = req.query;
+  // 🔥 AMBIL PARAMETER DARI QUERY ATAU BODY
+  let game, version, user_key, serial, resource;
+
+  if (req.method === 'GET') {
+    // GET: ambil dari query string
+    game = req.query.game;
+    version = req.query.version;
+    user_key = req.query.user_key;
+    serial = req.query.serial;
+    resource = req.query.resource;
+  } else {
+    // POST: ambil dari body (JSON) atau query string (fallback)
+    if (req.body && Object.keys(req.body).length > 0) {
+      // Coba ambil dari body
+      game = req.body.game;
+      version = req.body.version;
+      user_key = req.body.user_key;
+      serial = req.body.serial;
+      resource = req.body.resource;
+    }
+    
+    // Kalau body kosong, coba dari query string
+    if (!game || !version || !user_key || !serial || !resource) {
+      game = req.query.game;
+      version = req.query.version;
+      user_key = req.query.user_key;
+      serial = req.query.serial;
+      resource = req.query.resource;
+    }
+  }
 
   // Validasi required parameters
   if (!game || !version || !user_key || !serial || !resource) {
