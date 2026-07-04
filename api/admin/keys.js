@@ -1,19 +1,34 @@
 import fs from 'fs';
 import path from 'path';
 
-const REGISTER_PATH = path.join(process.cwd(), 'register.txt');
-const DEVICES_PATH = path.join(process.cwd(), 'devices.json');
+// PAKAI /tmp (BISA WRITE)
+const DATA_DIR = '/tmp';
+const REGISTER_PATH = path.join(DATA_DIR, 'register.txt');
+const DEVICES_PATH = path.join(DATA_DIR, 'devices.json');
 
 // Fungsi untuk membaca daftar user_key
 function getRegisteredKeys() {
   try {
+    // Cek apakah file ada
+    if (!fs.existsSync(REGISTER_PATH)) {
+      // Buat file kosong
+      fs.writeFileSync(REGISTER_PATH, '');
+      return [];
+    }
     const fileContent = fs.readFileSync(REGISTER_PATH, 'utf8');
     return fileContent.split('\n')
       .map(line => line.trim())
       .filter(line => line.length > 0);
   } catch (error) {
     console.error('Error reading register.txt:', error);
-    return [];
+    // Kalau error, coba buat ulang file
+    try {
+      fs.writeFileSync(REGISTER_PATH, '');
+      return [];
+    } catch (e) {
+      console.error('Cannot create register.txt:', e);
+      return [];
+    }
   }
 }
 
@@ -26,16 +41,6 @@ function saveRegisteredKeys(keys) {
     console.error('Error saving register.txt:', error);
     return false;
   }
-}
-
-// Generate random key dengan awalan PINOKCRACK_
-function generateKey() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = 'PINOKCRACK_';
-  for (let i = 0; i < 12; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
 }
 
 // Fungsi untuk membaca data devices
@@ -61,6 +66,16 @@ function saveDevicesData(data) {
     console.error('Error saving devices.json:', error);
     return false;
   }
+}
+
+// Generate random key dengan awalan PINOKCRACK_
+function generateKey() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = 'PINOKCRACK_';
+  for (let i = 0; i < 12; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
 }
 
 export default function handler(req, res) {
@@ -102,7 +117,14 @@ export default function handler(req, res) {
       }
     }
 
-    saveRegisteredKeys(keys);
+    const saved = saveRegisteredKeys(keys);
+
+    if (!saved) {
+      return res.status(500).json({
+        status: false,
+        reason: "Failed to save keys"
+      });
+    }
 
     return res.status(200).json({
       status: true,
@@ -135,7 +157,14 @@ export default function handler(req, res) {
     }
 
     keys = keys.filter(k => k !== key);
-    saveRegisteredKeys(keys);
+    const saved = saveRegisteredKeys(keys);
+
+    if (!saved) {
+      return res.status(500).json({
+        status: false,
+        reason: "Failed to delete key"
+      });
+    }
 
     return res.status(200).json({
       status: true,
@@ -147,7 +176,7 @@ export default function handler(req, res) {
     });
   }
 
-  // PUT - Update expired untuk key
+  // PUT - Update expired
   if (req.method === 'PUT') {
     const { key, expired } = req.body;
     
@@ -168,7 +197,14 @@ export default function handler(req, res) {
     }
 
     devicesData[key].expired = expired;
-    saveDevicesData(devicesData);
+    const saved = saveDevicesData(devicesData);
+
+    if (!saved) {
+      return res.status(500).json({
+        status: false,
+        reason: "Failed to update expired"
+      });
+    }
 
     return res.status(200).json({
       status: true,

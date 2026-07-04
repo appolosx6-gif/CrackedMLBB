@@ -1,28 +1,30 @@
 import fs from 'fs';
 import path from 'path';
 
-const ADMIN_PATH = path.join(process.cwd(), 'admin.json');
+// PAKAI /tmp (BISA WRITE)
+const DATA_DIR = '/tmp';
+const ADMIN_PATH = path.join(DATA_DIR, 'admin.json');
 
-// DATA ADMIN - Username & Password (bisa diubah di sini)
-const ADMIN_USERNAME = 'pino';
+const ADMIN_USERNAME = 'owner';
 const ADMIN_PASSWORD = 'pinoganteng123';
 
-// Fungsi untuk membaca atau membuat admin.json
 function getAdminData() {
   try {
-    if (fs.existsSync(ADMIN_PATH)) {
-      const fileContent = fs.readFileSync(ADMIN_PATH, 'utf8');
-      return JSON.parse(fileContent);
+    // Cek apakah file ada
+    if (!fs.existsSync(ADMIN_PATH)) {
+      // Buat default admin
+      const defaultAdmin = {
+        username: ADMIN_USERNAME,
+        password: ADMIN_PASSWORD
+      };
+      fs.writeFileSync(ADMIN_PATH, JSON.stringify(defaultAdmin, null, 2));
+      return defaultAdmin;
     }
-    // Buat file admin.json jika belum ada
-    const defaultAdmin = {
-      username: ADMIN_USERNAME,
-      password: ADMIN_PASSWORD
-    };
-    fs.writeFileSync(ADMIN_PATH, JSON.stringify(defaultAdmin, null, 2));
-    return defaultAdmin;
+    const fileContent = fs.readFileSync(ADMIN_PATH, 'utf8');
+    return JSON.parse(fileContent);
   } catch (error) {
     console.error('Error reading admin.json:', error);
+    // Fallback ke default
     return { username: ADMIN_USERNAME, password: ADMIN_PASSWORD };
   }
 }
@@ -53,8 +55,7 @@ export default function handler(req, res) {
   }
 
   const admin = getAdminData();
-  
-  // Cek username & password (plain text)
+
   if (admin.username !== username || admin.password !== password) {
     return res.status(200).json({
       status: false,
@@ -62,7 +63,6 @@ export default function handler(req, res) {
     });
   }
 
-  // Login sukses
   return res.status(200).json({
     status: true,
     data: {

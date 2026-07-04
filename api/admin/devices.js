@@ -1,7 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 
-const DEVICES_PATH = path.join(process.cwd(), 'devices.json');
+// PAKAI /tmp (BISA WRITE)
+const DATA_DIR = '/tmp';
+const DEVICES_PATH = path.join(DATA_DIR, 'devices.json');
 
 export default function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
