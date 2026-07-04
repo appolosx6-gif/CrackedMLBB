@@ -5,19 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MLBB API Tester</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
         }
-
         .container {
             max-width: 900px;
             margin: 0 auto;
@@ -26,7 +20,6 @@
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             padding: 40px;
         }
-
         .nav-bar {
             display: flex;
             justify-content: space-between;
@@ -35,12 +28,7 @@
             padding-bottom: 15px;
             border-bottom: 2px solid #e5e7eb;
         }
-
-        .nav-bar h1 {
-            color: #333;
-            font-size: 24px;
-        }
-
+        .nav-bar h1 { color: #333; font-size: 24px; }
         .nav-links a {
             color: #667eea;
             text-decoration: none;
@@ -49,27 +37,10 @@
             border-radius: 8px;
             transition: all 0.3s;
         }
-
-        .nav-links a:hover {
-            background: #667eea;
-            color: white;
-        }
-
-        .nav-links a.active {
-            background: #667eea;
-            color: white;
-        }
-
-        .subtitle {
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 14px;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
+        .nav-links a:hover { background: #667eea; color: white; }
+        .nav-links a.active { background: #667eea; color: white; }
+        .subtitle { color: #666; margin-bottom: 30px; font-size: 14px; }
+        .form-group { margin-bottom: 15px; }
         label {
             display: block;
             margin-bottom: 5px;
@@ -77,7 +48,6 @@
             font-weight: 500;
             font-size: 14px;
         }
-
         input[type="text"] {
             width: 100%;
             padding: 12px 15px;
@@ -88,23 +58,12 @@
             outline: none;
             font-family: 'Courier New', monospace;
         }
-
         input[type="text"]:focus {
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
-
-        input[type="text"]:disabled {
-            background: #f3f4f6;
-            cursor: not-allowed;
-        }
-
-        .row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-
+        input[type="text"]:disabled { background: #f3f4f6; cursor: not-allowed; }
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .btn {
             padding: 14px 30px;
             border: none;
@@ -114,71 +73,26 @@
             cursor: pointer;
             transition: all 0.3s;
         }
-
         .btn-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             flex: 1;
         }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-        }
-
-        .btn-primary:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .btn-warning {
-            background: #f59e0b;
-            color: white;
-        }
-
-        .btn-warning:hover {
-            background: #d97706;
-            transform: translateY(-2px);
-        }
-
-        .btn-danger {
-            background: #ef4444;
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #dc2626;
-            transform: translateY(-2px);
-        }
-
-        .btn-success {
-            background: #10b981;
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: #059669;
-            transform: translateY(-2px);
-        }
-
-        .flex {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .flex .btn {
-            flex: 1;
-        }
-
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3); }
+        .btn-warning { background: #f59e0b; color: white; }
+        .btn-warning:hover { background: #d97706; transform: translateY(-2px); }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-danger:hover { background: #dc2626; transform: translateY(-2px); }
+        .btn-success { background: #10b981; color: white; }
+        .btn-success:hover { background: #059669; transform: translateY(-2px); }
+        .flex { display: flex; gap: 10px; margin-top: 10px; }
+        .flex .btn { flex: 1; }
         .result-box {
             margin-top: 30px;
             border: 2px solid #e5e7eb;
             border-radius: 15px;
             overflow: hidden;
         }
-
         .result-header {
             background: #f8f9fa;
             padding: 15px 20px;
@@ -189,39 +103,17 @@
             flex-wrap: wrap;
             gap: 10px;
         }
-
-        .result-header h3 {
-            color: #333;
-            font-size: 16px;
-        }
-
+        .result-header h3 { color: #333; font-size: 16px; }
         .status-badge {
             padding: 5px 15px;
             border-radius: 20px;
             font-size: 12px;
             font-weight: 600;
         }
-
-        .status-badge.success {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .status-badge.error {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .status-badge.loading {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .status-badge.idle {
-            background: #e5e7eb;
-            color: #6b7280;
-        }
-
+        .status-badge.success { background: #d1fae5; color: #065f46; }
+        .status-badge.error { background: #fee2e2; color: #991b1b; }
+        .status-badge.loading { background: #fef3c7; color: #92400e; }
+        .status-badge.idle { background: #e5e7eb; color: #6b7280; }
         .result-body {
             padding: 20px;
             background: #1a1a2e;
@@ -229,7 +121,6 @@
             overflow: auto;
             position: relative;
         }
-
         .result-body pre {
             color: #a5b4fc;
             font-family: 'Courier New', monospace;
@@ -239,7 +130,6 @@
             margin: 0;
             line-height: 1.6;
         }
-
         .result-body .copy-btn {
             position: sticky;
             top: 0;
@@ -254,17 +144,12 @@
             transition: all 0.3s;
             margin-bottom: 10px;
         }
-
-        .result-body .copy-btn:hover {
-            background: rgba(255,255,255,0.2);
-        }
-
+        .result-body .copy-btn:hover { background: rgba(255,255,255,0.2); }
         .json-key { color: #f472b6; }
         .json-string { color: #34d399; }
         .json-number { color: #fbbf24; }
         .json-boolean { color: #60a5fa; }
         .json-null { color: #9ca3af; }
-
         .info-box {
             background: #f0fdf4;
             border: 1px solid #bbf7d0;
@@ -272,12 +157,7 @@
             padding: 15px;
             margin-top: 20px;
         }
-
-        .info-box h4 {
-            color: #065f46;
-            margin-bottom: 10px;
-        }
-
+        .info-box h4 { color: #065f46; margin-bottom: 10px; }
         .info-box code {
             background: #d1fae5;
             padding: 2px 8px;
@@ -286,24 +166,9 @@
             color: #065f46;
             font-family: 'Courier New', monospace;
         }
-
-        .info-box ul {
-            list-style: none;
-            padding: 0;
-            margin-top: 10px;
-        }
-
-        .info-box ul li {
-            padding: 5px 0;
-            font-size: 14px;
-            color: #065f46;
-        }
-
-        .info-box ul li::before {
-            content: "• ";
-            font-weight: bold;
-        }
-
+        .info-box ul { list-style: none; padding: 0; margin-top: 10px; }
+        .info-box ul li { padding: 5px 0; font-size: 14px; color: #065f46; }
+        .info-box ul li::before { content: "• "; font-weight: bold; }
         .loading-spinner {
             display: inline-block;
             width: 16px;
@@ -315,18 +180,13 @@
             vertical-align: middle;
             margin-right: 8px;
         }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
+        @keyframes spin { to { transform: rotate(360deg); } }
         .example-keys {
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
             margin-top: 8px;
         }
-
         .example-keys span {
             background: #f3f4f6;
             padding: 4px 12px;
@@ -338,13 +198,11 @@
             border: 1px solid #e5e7eb;
             transition: all 0.2s;
         }
-
         .example-keys span:hover {
             background: #667eea;
             color: white;
             border-color: #667eea;
         }
-
         @media (max-width: 600px) {
             .container { padding: 20px; }
             .row { grid-template-columns: 1fr; }
@@ -356,7 +214,6 @@
 </head>
 <body>
     <div class="container">
-        <!-- Navbar -->
         <div class="nav-bar">
             <h1>🚀 MLBB API</h1>
             <div class="nav-links">
@@ -364,10 +221,7 @@
                 <a href="/admin">🔐 Admin Panel</a>
             </div>
         </div>
-
         <p class="subtitle">Test API dan lihat response JSON langsung</p>
-
-        <!-- Form -->
         <div id="apiForm">
             <div class="row">
                 <div class="form-group">
@@ -379,35 +233,29 @@
                     <input type="text" id="version" value="1.1" disabled>
                 </div>
             </div>
-
             <div class="form-group">
                 <label>User Key</label>
-                <input type="text" id="user_key" placeholder="Masukkan user_key" value="PINOKCRACK_ABCDEFGH1234">
+                <input type="text" id="user_key" placeholder="Masukkan user_key" value="PINOKCRACK_L3DGIQ8UG4PH">
                 <div class="example-keys">
+                    <span onclick="setKey('PINOKCRACK_L3DGIQ8UG4PH')">PINOKCRACK_L3DGIQ8UG4PH</span>
                     <span onclick="setKey('PINOKCRACK_ABCDEFGH1234')">PINOKCRACK_ABCDEFGH1234</span>
                     <span onclick="setKey('PINOKCRACK_XYZ7890QWERTY')">PINOKCRACK_XYZ7890QWERTY</span>
-                    <span onclick="setKey('MLBB_BGJTSZ8P3AGQ')">MLBB_BGJTSZ8P3AGQ</span>
                 </div>
             </div>
-
             <div class="form-group">
                 <label>Serial</label>
-                <input type="text" id="serial" placeholder="Masukkan serial device" value="67eb105f-6bd1-3026-9aaa-6aebdde05b3c">
+                <input type="text" id="serial" placeholder="Masukkan serial device" value="861e4484-b2d3-3013-a61b-1e96087e521e">
             </div>
-
             <div class="form-group">
                 <label>Resource</label>
                 <input type="text" id="resource" placeholder="Masukkan resource">
             </div>
-
             <div class="flex">
                 <button class="btn btn-primary" onclick="sendRequest()" id="sendBtn">📤 Send Request</button>
                 <button class="btn btn-warning" onclick="randomizeResource()">🎲 Random</button>
                 <button class="btn btn-danger" onclick="clearResult()">🗑️ Clear</button>
             </div>
         </div>
-
-        <!-- Result -->
         <div class="result-box" id="resultBox">
             <div class="result-header">
                 <h3>📋 Response JSON</h3>
@@ -417,63 +265,44 @@
                 <pre style="color: #9ca3af;">Belum ada request. Kirim request untuk melihat response.</pre>
             </div>
         </div>
-
-        <!-- Info -->
         <div class="info-box">
             <h4>📌 Informasi</h4>
             <ul>
-                <li><strong>Token</strong> = gabungan dari <code>resource</code> + <code>serial</code> + <code>timestamp</code></li>
-                <li><strong>Resource berbeda</strong> → Token berbeda</li>
-                <li><strong>1 user_key = 1 device</strong> (tidak bisa ganti serial sebelum expired)</li>
-                <li><strong>Expired</strong> = 1 jam dari request (kecuali di-set manual oleh admin)</li>
+                <li><strong>NYOLI</strong>NYOLI</li>
             </ul>
         </div>
     </div>
-
     <script>
         const BASE_URL = window.location.origin;
-
-        // Set key dari contoh
-        function setKey(key) {
-            document.getElementById('user_key').value = key;
-        }
-
-        // Send Request
+        function setKey(key) { document.getElementById('user_key').value = key; }
         async function sendRequest() {
             const game = document.getElementById('game').value;
             const version = document.getElementById('version').value;
             const user_key = document.getElementById('user_key').value.trim();
             const serial = document.getElementById('serial').value.trim();
             const resource = document.getElementById('resource').value.trim();
-
             if (!user_key || !serial || !resource) {
                 showResult({ status: false, reason: "Semua field harus diisi!" }, 'error');
                 return;
             }
-
             const badge = document.getElementById('statusBadge');
             badge.className = 'status-badge loading';
             badge.innerHTML = '<span class="loading-spinner"></span> Loading...';
-
             const body = document.getElementById('resultBody');
             body.innerHTML = `<pre style="color: #fbbf24;"><span class="loading-spinner" style="border-top-color: #fbbf24;"></span> Mengirim request...</pre>`;
-
             const sendBtn = document.getElementById('sendBtn');
             sendBtn.disabled = true;
             sendBtn.textContent = '⏳ Loading...';
-
             try {
                 const url = `${BASE_URL}/MLBB?game=${game}&version=${version}&user_key=${user_key}&serial=${serial}&resource=${resource}`;
                 const response = await fetch(url);
                 const data = await response.json();
-
                 showResult(data, data.status ? 'success' : 'error');
                 const highlighted = syntaxHighlight(JSON.stringify(data, null, 2));
                 document.getElementById('resultBody').innerHTML = `
                     <button class="copy-btn" onclick="copyResponse()">📋 Copy</button>
                     <pre>${highlighted}</pre>
                 `;
-
             } catch (error) {
                 showResult({ status: false, reason: "Error: " + error.message }, 'error');
                 document.getElementById('resultBody').innerHTML = `<pre style="color: #fca5a5;">❌ Error: ${error.message}</pre>`;
@@ -482,23 +311,12 @@
                 sendBtn.textContent = '📤 Send Request';
             }
         }
-
-        // Show Result
         function showResult(data, type) {
             const badge = document.getElementById('statusBadge');
-            if (type === 'success') {
-                badge.className = 'status-badge success';
-                badge.innerHTML = '✅ Success';
-            } else if (type === 'error') {
-                badge.className = 'status-badge error';
-                badge.innerHTML = '❌ Error';
-            } else {
-                badge.className = 'status-badge idle';
-                badge.innerHTML = 'Menunggu...';
-            }
+            if (type === 'success') { badge.className = 'status-badge success'; badge.innerHTML = '✅ Success'; }
+            else if (type === 'error') { badge.className = 'status-badge error'; badge.innerHTML = '❌ Error'; }
+            else { badge.className = 'status-badge idle'; badge.innerHTML = 'Menunggu...'; }
         }
-
-        // Copy Response
         function copyResponse() {
             const pre = document.querySelector('#resultBody pre');
             if (pre) {
@@ -507,54 +325,34 @@
                     const btn = document.querySelector('.copy-btn');
                     btn.textContent = '✅ Copied!';
                     setTimeout(() => { btn.textContent = '📋 Copy'; }, 2000);
-                }).catch(() => {
-                    alert('Gagal copy!');
-                });
+                }).catch(() => { alert('Gagal copy!'); });
             }
         }
-
-        // Syntax Highlight
         function syntaxHighlight(json) {
             json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
                 let cls = 'json-number';
-                if (/^"/.test(match)) {
-                    if (/:$/.test(match)) cls = 'json-key';
-                    else cls = 'json-string';
-                } else if (/true|false/.test(match)) cls = 'json-boolean';
+                if (/^"/.test(match)) { if (/:$/.test(match)) cls = 'json-key'; else cls = 'json-string'; }
+                else if (/true|false/.test(match)) cls = 'json-boolean';
                 else if (/null/.test(match)) cls = 'json-null';
                 return '<span class="' + cls + '">' + match + '</span>';
             });
         }
-
-        // Random Resource
         function randomizeResource() {
             const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
             let result = '';
-            for (let i = 0; i < 32; i++) {
-                result += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
+            for (let i = 0; i < 32; i++) { result += chars.charAt(Math.floor(Math.random() * chars.length)); }
             document.getElementById('resource').value = result;
         }
-
-        // Clear Result
         function clearResult() {
             document.getElementById('statusBadge').className = 'status-badge idle';
             document.getElementById('statusBadge').innerHTML = 'Menunggu...';
             document.getElementById('resultBody').innerHTML = '<pre style="color: #9ca3af;">Belum ada request. Kirim request untuk melihat response.</pre>';
         }
-
-        // Enter key to send
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && document.activeElement.tagName === 'INPUT') {
-                sendRequest();
-            }
+            if (e.key === 'Enter' && document.activeElement.tagName === 'INPUT') { sendRequest(); }
         });
-
-        // On load
-        window.onload = function() {
-            randomizeResource();
-        };
+        window.onload = function() { randomizeResource(); };
     </script>
 </body>
 </html>
