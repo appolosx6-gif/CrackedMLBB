@@ -1,9 +1,5 @@
-import fs from 'fs';
-import path from 'path';
-
-// PAKAI /tmp (BISA WRITE)
-const DATA_DIR = '/tmp';
-const DEVICES_PATH = path.join(DATA_DIR, 'devices.json');
+// 🔥 DATA DI MEMORY
+let devicesData = {};
 
 export default function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -21,25 +17,8 @@ export default function handler(req, res) {
     });
   }
 
-  try {
-    if (fs.existsSync(DEVICES_PATH)) {
-      const fileContent = fs.readFileSync(DEVICES_PATH, 'utf8');
-      const devicesData = JSON.parse(fileContent);
-      return res.status(200).json({
-        status: true,
-        data: devicesData
-      });
-    } else {
-      return res.status(200).json({
-        status: true,
-        data: {}
-      });
-    }
-  } catch (error) {
-    console.error('Error reading devices.json:', error);
-    return res.status(500).json({
-      status: false,
-      reason: "Error reading devices data"
-    });
-  }
+  return res.status(200).json({
+    status: true,
+    data: devicesData
+  });
 }
