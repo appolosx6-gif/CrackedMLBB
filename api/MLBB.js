@@ -1,13 +1,18 @@
 import fs from 'fs';
 import path from 'path';
 
-// Path untuk file-file
-const REGISTER_PATH = path.join(process.cwd(), 'register.txt');
-const DEVICES_PATH = path.join(process.cwd(), 'devices.json');
+// PAKAI /tmp (BISA WRITE)
+const DATA_DIR = '/tmp';
+const REGISTER_PATH = path.join(DATA_DIR, 'register.txt');
+const DEVICES_PATH = path.join(DATA_DIR, 'devices.json');
 
-// Fungsi untuk membaca daftar user_key terdaftar
+// Fungsi untuk membaca daftar user_key
 function getRegisteredKeys() {
   try {
+    if (!fs.existsSync(REGISTER_PATH)) {
+      fs.writeFileSync(REGISTER_PATH, '');
+      return [];
+    }
     const fileContent = fs.readFileSync(REGISTER_PATH, 'utf8');
     return fileContent.split('\n')
       .map(line => line.trim())
@@ -52,17 +57,14 @@ function isExpired(expiredDate) {
 }
 
 export default function handler(req, res) {
-  // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // Handle preflight request
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  // Only allow GET and POST methods
   if (req.method !== 'GET' && req.method !== 'POST') {
     return res.status(405).json({ 
       status: false, 
@@ -70,10 +72,8 @@ export default function handler(req, res) {
     });
   }
 
-  // Get query parameters
   const { game, version, user_key, serial, resource } = req.query;
 
-  // Validasi required parameters
   if (!game || !version || !user_key || !serial || !resource) {
     return res.status(400).json({
       status: false,
@@ -81,7 +81,6 @@ export default function handler(req, res) {
     });
   }
 
-  // Validasi game harus MLBB
   if (game !== 'MLBB') {
     return res.status(400).json({
       status: false,
@@ -89,10 +88,8 @@ export default function handler(req, res) {
     });
   }
 
-  // Baca daftar user_key dari register.txt
   const registeredKeys = getRegisteredKeys();
   
-  // Check if user_key is registered
   if (!registeredKeys.includes(user_key)) {
     return res.status(200).json({
       status: false,
@@ -100,28 +97,21 @@ export default function handler(req, res) {
     });
   }
 
-  // Baca data devices
-  const devicesData = getDevicesData();
+  let devicesData = getDevicesData();
 
-  // Cek apakah user_key sudah memiliki device
   if (devicesData[user_key]) {
     const existingDevice = devicesData[user_key];
     
-    // Cek expired
     if (isExpired(existingDevice.expired)) {
-      console.log(`[LOG] Device expired for ${user_key}, allowing new device...`);
       delete devicesData[user_key];
       saveDevicesData(devicesData);
     } else {
       if (existingDevice.serial !== serial) {
-        console.log(`[LOG] Device limit reached for ${user_key}. Serial: ${serial} not match with ${existingDevice.serial}`);
         return res.status(200).json({
           status: false,
           reason: "DEVICE LIMIT IS OUT"
         });
       }
-      saveDevicesData(devicesData);
-      console.log(`[LOG] Device updated for ${user_key}. Serial: ${serial}`);
     }
   }
 
@@ -160,7 +150,6 @@ export default function handler(req, res) {
   const expired = new Date(now.getTime() + 3600000);
   const expiredStr = expired.toISOString().replace('T', ' ').slice(0, 19);
 
-  // Simpan atau update device
   devicesData[user_key] = {
     serial: serial,
     datte: `${dateStr} ${timeStr}`,
