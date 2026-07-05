@@ -1,18 +1,16 @@
 // ============================================================
-// 🔥 PINOK API - mlbb.js (VERSI SUPER SIMPLE)
+// 🔥 PINOK API - FINAL FIX
 // ============================================================
 
 const ADMIN_USERNAME = 'owner';
 const ADMIN_PASSWORD = 'pinoganteng123';
 
-// Database
-let data = {
-  keys: ['PINOKCRACK_TEST123'],
-  devices: {}
-};
+// Database (in-memory)
+let keys = ['PINOKCRACK_TEST123'];
+let devices = {};
 
 // ============================================================
-// HELPER
+// HELPERS
 // ============================================================
 
 function generateKey() {
@@ -25,41 +23,35 @@ function generateKey() {
 }
 
 function generateToken(resource, serial) {
-  const base = `${resource}|${serial}|${Date.now()}`;
+  const base = resource + serial + Date.now();
   let hash = 0;
   for (let i = 0; i < base.length; i++) {
-    const char = base.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = ((hash << 5) - hash) + base.charCodeAt(i);
     hash = hash & hash;
   }
-  return Math.abs(hash).toString(16).padStart(32, '0').substring(0, 32);
+  return Math.abs(hash).toString(16).padStart(32, '0').slice(0, 32);
 }
 
 function generateRng() {
   return Math.floor(Math.random() * 100000000) + 1700000000;
 }
 
-function formatDate(date) {
-  const days = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = days[date.getMonth()];
-  const year = date.getFullYear();
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  return `${day}-${month}-${year} ${hours}:${minutes}`;
+function formatDate(d) {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return String(d.getDate()).padStart(2, '0') + '-' + months[d.getMonth()] + '-' + d.getFullYear() + 
+         ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
 }
 
-function formatExpired(date) {
-  return date.toISOString().replace('T', ' ').slice(0, 19);
+function formatExpired(d) {
+  return d.toISOString().replace('T', ' ').slice(0, 19);
 }
 
-function isExpired(expiredDate) {
-  if (!expiredDate) return false;
-  return new Date() > new Date(expiredDate);
+function isExpired(d) {
+  return new Date() > new Date(d);
 }
 
 // ============================================================
-// MAIN
+// HANDLER
 // ============================================================
 export default function handler(req, res) {
   // HEADERS
@@ -68,61 +60,47 @@ export default function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // OPTIONS
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
+  const url = req.url.split('?')[0];
+
   // ============================================================
-  // GET /api/mlbb
+  // GET /api/mlbb - CHECK
   // ============================================================
-  if (req.method === 'GET') {
+  if (req.method === 'GET' && url === '/api/mlbb') {
     try {
       const { game, version, user_key, serial, resource } = req.query;
 
-      // Validasi
       if (!game || !version || !user_key || !serial || !resource) {
-        return res.status(400).json({
-          status: false,
-          reason: 'Missing parameters'
-        });
+        return res.status(400).json({ status: false, reason: 'Missing parameters' });
       }
 
       if (game !== 'MLBB') {
-        return res.status(400).json({
-          status: false,
-          reason: 'Invalid game'
-        });
+        return res.status(400).json({ status: false, reason: 'Invalid game' });
       }
 
-      // Cek key
-      if (!data.keys.includes(user_key)) {
-        return res.status(200).json({
-          status: false,
-          reason: 'MEMBER KEY NOT REGISTERED'
-        });
+      if (!keys.includes(user_key)) {
+        return res.status(200).json({ status: false, reason: 'MEMBER KEY NOT REGISTERED' });
       }
 
-      // Cek device
-      if (data.devices[user_key]) {
-        const existing = data.devices[user_key];
-        if (isExpired(existing.expired)) {
-          delete data.devices[user_key];
-        } else if (existing.serial !== serial) {
-          return res.status(200).json({
-            status: false,
-            reason: 'DEVICE LIMIT IS OUT'
-          });
+      // CEK DEVICE
+      if (devices[user_key]) {
+        if (isExpired(devices[user_key].expired)) {
+          delete devices[user_key];
+        } else if (devices[user_key].serial !== serial) {
+          return res.status(200).json({ status: false, reason: 'DEVICE LIMIT IS OUT' });
         }
       }
 
-      // Generate
-      const token = generateToken(resource, serial);
-      const rng = generateRng();
+      // GENERATE
       const now = new Date();
       const expired = new Date(now.getTime() + 3600000);
+      const token = generateToken(resource, serial);
+      const rng = generateRng();
 
-      data.devices[user_key] = {
+      devices[user_key] = {
         serial: serial,
         datte: formatDate(now),
         expired: formatExpired(expired)
@@ -149,140 +127,131 @@ export default function handler(req, res) {
       });
 
     } catch (e) {
-      return res.status(500).json({
-        status: false,
-        reason: e.message
-      });
+      return res.status(500).json({ status: false, reason: e.message });
     }
   }
 
   // ============================================================
-  // POST /api/mlbb
+  // POST /api/mlbb/login
   // ============================================================
-  if (req.method === 'POST') {
+  if (req.method === 'POST' && url === '/api/mlbb/login') {
     try {
-      const body = req.body || {};
-      const { action, username, password, key, count } = body;
+      const { username, password } = req.body || {};
 
-      // LOGIN
-      if (action === 'login') {
-        if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-          return res.status(200).json({
-            status: true,
-            message: 'Login successful',
-            data: { username: ADMIN_USERNAME, role: 'admin' }
-          });
-        } else {
-          return res.status(401).json({
-            status: false,
-            reason: 'Invalid username or password'
-          });
-        }
+      if (!username || !password) {
+        return res.status(400).json({ status: false, reason: 'Username & password required' });
       }
 
-      // GENERATE KEY
-      if (action === 'generate') {
-        if (username !== ADMIN_USERNAME) {
-          return res.status(401).json({
-            status: false,
-            reason: 'Unauthorized'
-          });
-        }
-
-        const newKeys = [];
-        const total = count || 1;
-
-        for (let i = 0; i < total; i++) {
-          let newKey;
-          let attempts = 0;
-          do {
-            newKey = generateKey();
-            attempts++;
-          } while (data.keys.includes(newKey) && attempts < 100);
-
-          if (!data.keys.includes(newKey)) {
-            data.keys.push(newKey);
-            newKeys.push(newKey);
-          }
-        }
-
+      if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
         return res.status(200).json({
           status: true,
-          message: `${newKeys.length} key(s) generated`,
-          data: { keys: newKeys, total: data.keys.length }
+          message: 'Login successful',
+          data: { username: ADMIN_USERNAME, role: 'admin' }
         });
       }
 
-      // LIST KEYS
-      if (action === 'list') {
-        if (username !== ADMIN_USERNAME) {
-          return res.status(401).json({
-            status: false,
-            reason: 'Unauthorized'
-          });
-        }
+      return res.status(401).json({ status: false, reason: 'Invalid username or password' });
 
-        return res.status(200).json({
-          status: true,
-          data: {
-            keys: data.keys,
-            total: data.keys.length,
-            devices: data.devices
-          }
-        });
+    } catch (e) {
+      return res.status(500).json({ status: false, reason: e.message });
+    }
+  }
+
+  // ============================================================
+  // POST /api/mlbb/generate
+  // ============================================================
+  if (req.method === 'POST' && url === '/api/mlbb/generate') {
+    try {
+      const { username, count } = req.body || {};
+
+      if (username !== ADMIN_USERNAME) {
+        return res.status(401).json({ status: false, reason: 'Unauthorized' });
       }
 
-      // DELETE KEY
-      if (action === 'delete') {
-        if (username !== ADMIN_USERNAME) {
-          return res.status(401).json({
-            status: false,
-            reason: 'Unauthorized'
-          });
+      const total = count || 1;
+      const newKeys = [];
+
+      for (let i = 0; i < total; i++) {
+        let k;
+        let attempts = 0;
+        do {
+          k = generateKey();
+          attempts++;
+        } while (keys.includes(k) && attempts < 100);
+
+        if (!keys.includes(k)) {
+          keys.push(k);
+          newKeys.push(k);
         }
-
-        if (!key) {
-          return res.status(400).json({
-            status: false,
-            reason: 'Key required'
-          });
-        }
-
-        if (!data.keys.includes(key)) {
-          return res.status(404).json({
-            status: false,
-            reason: 'Key not found'
-          });
-        }
-
-        data.keys = data.keys.filter(k => k !== key);
-        delete data.devices[key];
-
-        return res.status(200).json({
-          status: true,
-          message: 'Key deleted',
-          data: { key: key, total: data.keys.length }
-        });
       }
 
-      return res.status(400).json({
-        status: false,
-        reason: 'Invalid action. Use: login, generate, list, delete'
+      return res.status(200).json({
+        status: true,
+        message: `${newKeys.length} key(s) generated`,
+        data: { keys: newKeys, total: keys.length }
       });
 
     } catch (e) {
-      return res.status(500).json({
-        status: false,
-        reason: e.message
+      return res.status(500).json({ status: false, reason: e.message });
+    }
+  }
+
+  // ============================================================
+  // POST /api/mlbb/list
+  // ============================================================
+  if (req.method === 'POST' && url === '/api/mlbb/list') {
+    try {
+      const { username } = req.body || {};
+
+      if (username !== ADMIN_USERNAME) {
+        return res.status(401).json({ status: false, reason: 'Unauthorized' });
+      }
+
+      return res.status(200).json({
+        status: true,
+        data: { keys: keys, total: keys.length, devices: devices }
       });
+
+    } catch (e) {
+      return res.status(500).json({ status: false, reason: e.message });
+    }
+  }
+
+  // ============================================================
+  // POST /api/mlbb/delete
+  // ============================================================
+  if (req.method === 'POST' && url === '/api/mlbb/delete') {
+    try {
+      const { username, key } = req.body || {};
+
+      if (username !== ADMIN_USERNAME) {
+        return res.status(401).json({ status: false, reason: 'Unauthorized' });
+      }
+
+      if (!key) {
+        return res.status(400).json({ status: false, reason: 'Key required' });
+      }
+
+      if (!keys.includes(key)) {
+        return res.status(404).json({ status: false, reason: 'Key not found' });
+      }
+
+      keys = keys.filter(k => k !== key);
+      delete devices[key];
+
+      return res.status(200).json({
+        status: true,
+        message: 'Key deleted',
+        data: { key: key, total: keys.length }
+      });
+
+    } catch (e) {
+      return res.status(500).json({ status: false, reason: e.message });
     }
   }
 
   // ============================================================
   // 404
   // ============================================================
-  return res.status(404).json({
-    status: false,
-    reason: 'Not Found'
-  });
+  return res.status(404).json({ status: false, reason: 'Not Found' });
 }
