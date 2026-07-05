@@ -1,14 +1,42 @@
-// 🔥 DATA KOSONG (keys & devices)
-let data = {
-  keys: [],      // ← KOSONG! Tidak ada default key
-  devices: {}    // ← KOSONG! Akan terisi saat ada yang daftar
-};
+// ============================================================
+// 🔥 PINOK API - RNG AWALAN 17
+// ============================================================
 
-// ADMIN CREDENTIAL
+const fs = require('fs');
+const path = require('path');
+
+const DB_PATH = path.join(process.cwd(), 'data', 'pinok.json');
+
+function loadData() {
+  try {
+    if (fs.existsSync(DB_PATH)) {
+      const raw = fs.readFileSync(DB_PATH, 'utf8');
+      return JSON.parse(raw);
+    }
+  } catch (e) {
+    console.log('Error loading database:', e.message);
+  }
+  return { keys: [], devices: {} };
+}
+
+function saveData(data) {
+  try {
+    const dir = path.dirname(DB_PATH);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
+    return true;
+  } catch (e) {
+    console.log('Error saving database:', e.message);
+    return false;
+  }
+}
+
 const ADMIN_USERNAME = 'owner';
 const ADMIN_PASSWORD = 'pinoganteng123';
+const ADMIN_TOKEN = '8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c';
 
-// Fungsi cek expired
 function isExpired(expiredDate) {
   if (!expiredDate) return false;
   const now = new Date();
@@ -16,7 +44,6 @@ function isExpired(expiredDate) {
   return now > expired;
 }
 
-// Generate random key
 function generateKey() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let result = 'PINOKCRACK_';
@@ -26,7 +53,9 @@ function generateKey() {
   return result;
 }
 
-// Generate token
+// ============================================================
+// 🔑 GENERATE TOKEN 32 KARAKTER
+// ============================================================
 function generateToken(resource, serial) {
   const baseString = `${resource}|${serial}|${Date.now()}`;
   
@@ -37,27 +66,55 @@ function generateToken(resource, serial) {
     hash = hash & hash;
   }
   
-  const hexHash = Math.abs(hash).toString(16).padStart(8, '0');
-  const randomPart = Math.random().toString(36).substring(2, 10);
-  
-  return `${hexHash}${randomPart}`.substring(0, 32);
+  return Math.abs(hash).toString(16).padStart(32, '0').substring(0, 32);
 }
 
+// ============================================================
+// 🎲 GENERATE RNG AWALAN 17
+// ============================================================
+function generateRng() {
+  // Range: 1700000000 - 1799999999
+  return Math.floor(Math.random() * 100000000) + 1700000000;
+}
+
+// ============================================================
+// 📅 FORMAT DATE
+// ============================================================
+function formatDate(date) {
+  const days = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = days[date.getMonth()];
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${day}-${month}-${year} ${hours}:${minutes}`;
+}
+
+function formatExpired(date) {
+  return date.toISOString().replace('T', ' ').slice(0, 19);
+}
+
+// ============================================================
+// 🚀 MAIN HANDLER
+// ============================================================
 export default function handler(req, res) {
-  // Set CORS headers
+  let data = loadData();
+
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, PUT, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
 
-  // Handle preflight request
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
+  const url = req.url.split('?')[0];
+
   // ============================================================
   // 🔥 ROUTING: /api/admin/login
   // ============================================================
-  if (req.url === '/api/admin/login' && req.method === 'POST') {
+  if (url === '/api/admin/login' && req.method === 'POST') {
     const { username, password } = req.body;
     
     if (!username || !password) {
@@ -68,7 +125,7 @@ export default function handler(req, res) {
     }
 
     if (ADMIN_USERNAME !== username || ADMIN_PASSWORD !== password) {
-      return res.status(200).json({
+      return res.status(401).json({
         status: false,
         reason: "Invalid username or password"
       });
@@ -76,26 +133,40 @@ export default function handler(req, res) {
 
     return res.status(200).json({
       status: true,
+      message: "Login successful",
       data: {
         username: ADMIN_USERNAME,
-        session: Date.now().toString(36) + Math.random().toString(36).substring(2)
+        admin_token: ADMIN_TOKEN,
+        expires_in: "24h",
+        expires_at: formatExpired(new Date(Date.now() + 24*60*60*1000))
       }
     });
   }
 
   // ============================================================
-  // 🔥 ROUTING: /api/admin/keys (GET = lihat keys, POST = generate)
+  // 🔥 ROUTING: /api/admin/keys
   // ============================================================
-  if (req.url === '/api/admin/keys') {
-    // GET - Ambil semua keys
-    if (req.method === 'GET') {
-      return res.status(200).json({
-        status: true,
-        data: data.keys
+  if (url === '/api/admin/keys') {
+    const admin_token = req.body?.admin_token || req.query?.admin_token;
+    
+    if (admin_token !== ADMIN_TOKEN) {
+      return res.status(401).json({
+        status: false,
+        reason: "UNAUTHORIZED ADMIN"
       });
     }
 
-    // POST - Generate key baru
+    if (req.method === 'GET') {
+      return res.status(200).json({
+        status: true,
+        data: {
+          keys: data.keys,
+          total: data.keys.length,
+          devices: data.devices
+        }
+      });
+    }
+
     if (req.method === 'POST') {
       const { count = 1 } = req.body;
       const newKeys = [];
@@ -114,17 +185,18 @@ export default function handler(req, res) {
         }
       }
 
+      saveData(data);
+
       return res.status(200).json({
         status: true,
+        message: `${newKeys.length} key(s) generated successfully`,
         data: {
-          message: `${newKeys.length} key(s) generated successfully`,
           keys: newKeys,
           total: data.keys.length
         }
       });
     }
 
-    // DELETE - Hapus key
     if (req.method === 'DELETE') {
       const { key } = req.body;
       
@@ -136,50 +208,22 @@ export default function handler(req, res) {
       }
 
       if (!data.keys.includes(key)) {
-        return res.status(200).json({
+        return res.status(404).json({
           status: false,
           reason: "Key not found"
         });
       }
 
       data.keys = data.keys.filter(k => k !== key);
+      delete data.devices[key];
+      saveData(data);
 
       return res.status(200).json({
         status: true,
+        message: "Key deleted successfully",
         data: {
-          message: "Key deleted successfully",
           key: key,
           total: data.keys.length
-        }
-      });
-    }
-
-    // PUT - Update expired
-    if (req.method === 'PUT') {
-      const { key, expired } = req.body;
-      
-      if (!key || !expired) {
-        return res.status(400).json({
-          status: false,
-          reason: "Key and expired date are required"
-        });
-      }
-
-      if (!data.devices[key]) {
-        return res.status(200).json({
-          status: false,
-          reason: "Key not found in devices"
-        });
-      }
-
-      data.devices[key].expired = expired;
-
-      return res.status(200).json({
-        status: true,
-        data: {
-          message: "Expired date updated successfully",
-          key: key,
-          expired: expired
         }
       });
     }
@@ -191,20 +235,9 @@ export default function handler(req, res) {
   }
 
   // ============================================================
-  // 🔥 ROUTING: /api/admin/devices (GET = lihat devices)
+  // 🔥 ROUTING: /MLBB
   // ============================================================
-  if (req.url === '/api/admin/devices' && req.method === 'GET') {
-    return res.status(200).json({
-      status: true,
-      data: data.devices
-    });
-  }
-
-  // ============================================================
-  // 🔥 ROUTING: /MLBB (API Utama - GET & POST)
-  // ============================================================
-  if (req.url === '/MLBB' || req.url.startsWith('/MLBB?')) {
-    // Ambil parameter dari query atau body
+  if (url === '/MLBB') {
     let game, version, user_key, serial, resource;
 
     if (req.method === 'GET') {
@@ -214,24 +247,13 @@ export default function handler(req, res) {
       serial = req.query.serial;
       resource = req.query.resource;
     } else {
-      if (req.body && Object.keys(req.body).length > 0) {
-        game = req.body.game;
-        version = req.body.version;
-        user_key = req.body.user_key;
-        serial = req.body.serial;
-        resource = req.body.resource;
-      }
-      
-      if (!game || !version || !user_key || !serial || !resource) {
-        game = req.query.game;
-        version = req.query.version;
-        user_key = req.query.user_key;
-        serial = req.query.serial;
-        resource = req.query.resource;
-      }
+      game = req.body.game || req.query.game;
+      version = req.body.version || req.query.version;
+      user_key = req.body.user_key || req.query.user_key;
+      serial = req.body.serial || req.query.serial;
+      resource = req.body.resource || req.query.resource;
     }
 
-    // Validasi required parameters
     if (!game || !version || !user_key || !serial || !resource) {
       return res.status(400).json({
         status: false,
@@ -239,7 +261,6 @@ export default function handler(req, res) {
       });
     }
 
-    // Validasi game harus MLBB
     if (game !== 'MLBB') {
       return res.status(400).json({
         status: false,
@@ -247,16 +268,14 @@ export default function handler(req, res) {
       });
     }
 
-    // Check if user_key is registered
     if (!data.keys.includes(user_key)) {
-      console.log(`Key not registered: ${user_key}`);
+      console.log(`[LOG] Key not registered: ${user_key}`);
       return res.status(200).json({
         status: false,
         reason: "MEMBER KEY NOT REGISTERED"
       });
     }
 
-    // Cek device
     if (data.devices[user_key]) {
       const existingDevice = data.devices[user_key];
       
@@ -274,44 +293,40 @@ export default function handler(req, res) {
       }
     }
 
-    // Generate token
+    // ============================================================
+    // 🎯 GENERATE TOKEN & RNG AWALAN 17
+    // ============================================================
     const token = generateToken(resource, serial);
-    const rng = Math.floor(Math.random() * 2000000000) + 1000000000;
+    const rng = generateRng();  // ← AWALAN 17
 
     const now = new Date();
-    const dateStr = now.toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    }).replace(/ /g, '-');
-    
-    const timeStr = now.toLocaleTimeString('en-GB', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-
     const expired = new Date(now.getTime() + 3600000);
-    const expiredStr = expired.toISOString().replace('T', ' ').slice(0, 19);
 
-    // 🔥 SIMPAN DEVICE (baru pertama kali)
     data.devices[user_key] = {
       serial: serial,
-      datte: `${dateStr} ${timeStr}`,
-      expired: expiredStr
+      datte: formatDate(now),
+      expired: formatExpired(expired)
     };
 
-    console.log(`[LOG] Device saved for ${user_key}:`, data.devices[user_key]);
+    saveData(data);
 
+    console.log(`[LOG] ✅ Device saved for ${user_key}`);
+    console.log(`[LOG] Token: ${token}`);
+    console.log(`[LOG] RNG: ${rng}`);
+
+    // ============================================================
+    // 📤 RESPONSE
+    // ============================================================
     const response = {
       status: true,
       data: {
-        Datte: `${dateStr} ${timeStr}`,
+        Datte: formatDate(now),
         token: token,
-        rng: rng,
+        rng: rng,  // ← 1783163808 (awalan 17)
         tittle: "kyvrennn",
         versi: version,
         instance: "Instance",
-        expired: expiredStr
+        expired: formatExpired(expired)
       },
       features: {
         esp_line: true,
@@ -325,9 +340,6 @@ export default function handler(req, res) {
     return res.status(200).json(response);
   }
 
-  // ============================================================
-  // 🔥 ROUTING: DEFAULT - 404
-  // ============================================================
   return res.status(404).json({
     status: false,
     reason: "Not Found"
