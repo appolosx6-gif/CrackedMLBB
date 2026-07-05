@@ -1,5 +1,5 @@
 // ============================================================
-// 🔥 PINOK API - FINAL (tanpa pretty, tanpa session_id)
+// 🔥 PINOK API - FINAL (Token dari Timestamp + User Key + Serial)
 // ============================================================
 
 let data = {
@@ -29,15 +29,44 @@ function generateKey() {
   return r;
 }
 
-function generateToken(resource, serial) {
-  const base = `${resource}|${serial}|${Date.now()}`;
-  let hash = 0;
+// ============================================================
+// 🔥 GENERATE TOKEN DARI TIMESTAMP + USER KEY + SERIAL
+// ============================================================
+function generateToken(user_key, serial) {
+  // Gabungkan: timestamp + user_key + serial
+  const base = `${Date.now()}|${user_key}|${serial}`;
+  
+  // Hash menggunakan FNV-1a (lebih baik)
+  let h1 = 0x811c9dc5;
+  let h2 = 0x6c62272e;
+  
   for (let i = 0; i < base.length; i++) {
     const c = base.charCodeAt(i);
-    hash = ((hash << 5) - hash) + c;
-    hash = hash & hash;
+    h1 ^= c;
+    h1 = Math.imul(h1, 0x01000193);
+    
+    h2 ^= c * (i + 1);
+    h2 = Math.imul(h2, 0x01000193);
   }
-  return Math.abs(hash).toString(16).padStart(32, '0').substring(0, 32);
+  
+  // Hash ketiga dari timestamp murni
+  const ts = Date.now();
+  const h3 = (ts ^ (ts >>> 16)) & 0xFFFFFFFF;
+  
+  // Gabungkan 32 karakter
+  const p1 = (h1 >>> 0).toString(16).padStart(8, '0');
+  const p2 = (h2 >>> 0).toString(16).padStart(8, '0');
+  const p3 = (h3 >>> 0).toString(16).padStart(8, '0');
+  const p4 = Math.floor(Math.random() * 0xFFFFFFFF).toString(16).padStart(8, '0');
+  
+  let token = (p1 + p2 + p3 + p4).substring(0, 32);
+  
+  // Pastikan tidak semua 0
+  if (token.replace(/0/g, '').length === 0) {
+    token = 'a' + token.substring(1);
+  }
+  
+  return token;
 }
 
 function generateRng() {
@@ -198,8 +227,8 @@ export default function handler(req, res) {
         }
       }
 
-      // Generate token & rng
-      const token = generateToken(resource, serial);
+      // 🔥 GENERATE TOKEN DARI TIMESTAMP + USER KEY + SERIAL
+      const token = generateToken(user_key, serial);
       const rng = generateRng();
       const now = new Date();
       const expired = new Date(now.getTime() + 3600000);
@@ -211,7 +240,7 @@ export default function handler(req, res) {
         expired: formatExpired(expired)
       };
 
-      // RESPONSE TANPA SESSION_ID, TANPA PRETTY
+      // RESPONSE
       return res.status(200).json({
         status: true,
         data: {
